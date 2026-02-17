@@ -1,0 +1,60 @@
+from PIL import Image, ImageFilter
+def applyFilter(image):
+    # Convert Pillow Image to numpy array
+    img_array = np.array(image)
+
+    # Apply filters and calculate MSE and PSNR values
+    kernel = np.ones((3, 3), np.float32) / 25
+    dst = cv2.filter2D(img_array, -1, kernel)
+    blur = cv2.GaussianBlur(img_array, (3, 3), 0)
+    median = cv2.medianBlur(img_array, 3)
+    bl = cv2.bilateralFilter(img_array, 3, 75, 75)
+    i = image.filter(ImageFilter.MinFilter(size=3))
+    i2 = image.filter(ImageFilter.MaxFilter(size=3))
+
+    # Calculate MSE and PSNR values
+    Y1 = np.square(np.subtract(img_array, dst)).mean()
+    Y2 = np.square(np.subtract(img_array, blur)).mean()
+    Y3 = np.square(np.subtract(img_array, median)).mean()
+    Y4 = np.square(np.subtract(img_array, bl)).mean()
+    Y5 = np.square(np.subtract(img_array, i)).mean()
+    Y7 = np.square(np.subtract(img_array, i2)).mean()
+
+    P1 = 10 * math.log10((255 * 255) / Y1)
+    P2 = 10 * math.log10((255 * 255) / Y2)
+    P3 = 10 * math.log10((255 * 255) / Y3)
+    P4 = 10 * math.log10((255 * 255) / Y4)
+    P5 = 10 * math.log10((255 * 255) / Y5)
+    P7 = 10 * math.log10((255 * 255) / Y7)
+
+    # Calculate the combined score for each filter
+    scores = {
+        "Average Filter": P1 / Y1,
+        "Gaussian Blur": P2 / Y2,
+        "Median Filter": P3 / Y3,
+        "Bilateral Filter": P4 / Y4,
+        "Min Filter": P5 / Y5,
+        "Max Filter": P7 / Y7,
+    }
+
+    # Select the filter with the maximum combined score
+    best_filter = max(scores, key=scores.get)
+    #Return the name of the best Filter
+    return best_filter
+
+
+def applyFilterToImage(image, filter_name):
+    img_array = np.array(image)  # Convert Pillow Image to numpy array
+
+    if filter_name == "Average Filter":
+        return cv2.filter2D(img_array, -1, kernel)
+    elif filter_name == "Gaussian Blur":
+        return cv2.GaussianBlur(img_array, (3, 3), 0)
+    elif filter_name == "Median Filter":
+        return cv2.medianBlur(img_array, 3)
+    elif filter_name == "Bilateral Filter":
+        return cv2.bilateralFilter(img_array, 3, 75, 75)
+    elif filter_name == "Min Filter":
+        return image.filter(ImageFilter.MinFilter(size=3))
+    elif filter_name == "Max Filter":
+        return image.filter(ImageFilter.MaxFilter(size=3))
